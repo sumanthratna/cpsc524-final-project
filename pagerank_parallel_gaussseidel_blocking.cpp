@@ -7,7 +7,6 @@
 #include <string>
 #include <chrono>
 #include <algorithm>
-#include <cstring>
 
 // Structure to represent a sparse matrix in CSR format
 struct CSRMatrix {
@@ -15,46 +14,31 @@ struct CSRMatrix {
     std::vector<int> col_idx;
     std::vector<double> values;
     int n; // number of rows/columns
+    
+    // Additional information to match reference implementation
+    std::vector<int> out_degree;  // Store out-degree for each node
 };
 
 // Normalize the web graph to create the Markov transition matrix
 void normalizeCSRMatrix(CSRMatrix& matrix) {
-    std::vector<double> col_sums(matrix.n, 0.0);
+    // Count outgoing links for each node (out-degree)
+    matrix.out_degree.resize(matrix.n, 0);
     
-    // Calculate out-degree (sum of outgoing links) for each node
-    #pragma omp parallel for
     for (int i = 0; i < matrix.n; ++i) {
-        for (int j = matrix.row_ptr[i]; j < matrix.row_ptr[i + 1]; ++j) {
-            col_sums[i] += matrix.values[j];
-        }
+        matrix.out_degree[i] = matrix.row_ptr[i + 1] - matrix.row_ptr[i];
     }
     
-    // Normalize each column to sum to 1
-    #pragma omp parallel for
+    // Normalize each row's values to represent transition probabilities
     for (int i = 0; i < matrix.n; ++i) {
-        if (col_sums[i] > 0) {
+        if (matrix.out_degree[i] > 0) {
             for (int j = matrix.row_ptr[i]; j < matrix.row_ptr[i + 1]; ++j) {
-                matrix.values[j] /= col_sums[i];
+                matrix.values[j] = 1.0 / matrix.out_degree[i];
             }
         }
     }
 }
 
-// Identify dangling nodes (nodes with no outgoing links)
-std::vector<bool> identifyDanglingNodes(const CSRMatrix& matrix) {
-    std::vector<bool> is_dangling(matrix.n, true);
-    
-    #pragma omp parallel for
-    for (int i = 0; i < matrix.n; ++i) {
-        if (matrix.row_ptr[i] < matrix.row_ptr[i + 1]) {
-            is_dangling[i] = false;
-        }
-    }
-    
-    return is_dangling;
-}
-
-// PageRank with Gauss-Seidel iterations
+// PageRank with Gauss-Seidel iterations - Matched to reference implementation
 std::vector<double> pageRankGaussSeidel(
     const CSRMatrix& matrix,
     double alpha = 0.85,
@@ -62,52 +46,50 @@ std::vector<double> pageRankGaussSeidel(
     int max_iterations = 100
 ) {
     int n = matrix.n;
-    std::vector<double> rank(n, 1.0 / n); // Initialize ranks evenly
-    std::vector<double> old_rank(n);
-    std::vector<bool> dangling_nodes = identifyDanglingNodes(matrix);
+    std::vector<double> rank(n, 1.0 / n); // Initialize ranks evenly (p_t1)
+    std::vector<double> old_rank(n);      // Previous ranks (p_t0)
     
-    double dangling_factor = alpha / n;
-    double teleport_factor = (1.0 - alpha) / n;
     double error = 1.0;
     int iterations = 0;
     
     while (error > tolerance && iterations < max_iterations) {
-        // Copy current ranks to old_rank
+        // Copy current ranks to old_rank (p_t1 -> p_t0)
         #pragma omp parallel for
         for (int i = 0; i < n; ++i) {
             old_rank[i] = rank[i];
+            rank[i] = 0.0;  // Reset rank for accumulation
         }
         
-        // Calculate dangling node contribution
+        // Calculate dangling node contribution - same as reference implementation
         double dangling_sum = 0.0;
+        
         #pragma omp parallel for reduction(+:dangling_sum)
         for (int i = 0; i < n; ++i) {
-            if (dangling_nodes[i]) {
-                dangling_sum += old_rank[i];
+            if (matrix.out_degree[i] == 0) {
+                // This matches the reference code's: temp_sum = temp_sum + (double) Nodes[i].p_t0 / N;
+                dangling_sum += old_rank[i] / n;
             }
         }
-        dangling_sum = dangling_factor * dangling_sum;
         
-        // Gauss-Seidel iteration - NO PARALLELISM HERE due to dependencies
+        // Gauss-Seidel iteration
         for (int i = 0; i < n; ++i) {
-            double sum = 0.0;
-            
             // Calculate contribution from incoming links
             for (int j = 0; j < n; ++j) {
                 for (int k = matrix.row_ptr[j]; k < matrix.row_ptr[j + 1]; ++k) {
                     if (matrix.col_idx[k] == i) {
                         // For Gauss-Seidel, use updated values when available
                         if (j < i) {
-                            sum += alpha * matrix.values[k] * rank[j];
+                            rank[i] += alpha * matrix.values[k] * rank[j];
                         } else {
-                            sum += alpha * matrix.values[k] * old_rank[j];
+                            rank[i] += alpha * matrix.values[k] * old_rank[j];
                         }
                     }
                 }
             }
             
             // Add teleportation and dangling nodes contribution
-            rank[i] = sum + teleport_factor + dangling_sum;
+            // This matches the reference code's: p_t1 = d * (p_t1 + sum) + (1 - d) * e
+            rank[i] = alpha * (rank[i] + dangling_sum) + (1 - alpha) * (1.0 / n);
         }
         
         // Calculate error (can be parallelized)
@@ -116,18 +98,6 @@ std::vector<double> pageRankGaussSeidel(
         for (int i = 0; i < n; ++i) {
             double node_error = std::fabs(rank[i] - old_rank[i]);
             error = std::max(error, node_error);
-        }
-        
-        // Normalize to ensure sum is 1 (parallelized in two steps)
-        double sum = 0.0;
-        #pragma omp parallel for reduction(+:sum)
-        for (int i = 0; i < n; ++i) {
-            sum += rank[i];
-        }
-        
-        #pragma omp parallel for
-        for (int i = 0; i < n; ++i) {
-            rank[i] /= sum;
         }
         
         iterations++;
@@ -218,7 +188,7 @@ int main(int argc, char** argv) {
     
     // Skip comment lines that start with #
     while (std::getline(infile, line)) {
-        if (line[0] == '#') continue;
+        if (line.empty() || line[0] == '#') continue;
         
         std::stringstream ss(line);
         if (ss >> from_idx >> to_idx) {
@@ -278,6 +248,16 @@ int main(int argc, char** argv) {
             std::cout << "Page " << ranked_nodes[i].first << ": " 
                       << ranked_nodes[i].second << std::endl;
         }
+    }
+    
+    // Optionally write full results to file for comparison
+    std::ofstream outfile("pagerank_results_gauss_seidel.txt");
+    if (outfile.is_open()) {
+        for (int i = 0; i < web_graph.n; ++i) {
+            outfile << i << "\t" << page_ranks[i] << std::endl;
+        }
+        outfile.close();
+        std::cout << "Full results written to pagerank_results_gauss_seidel.txt" << std::endl;
     }
     
     return 0;
