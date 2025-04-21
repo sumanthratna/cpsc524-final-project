@@ -7,6 +7,7 @@
 #include <string>
 #include <chrono>
 #include <algorithm>
+#include <cstring>
 
 // Structure to represent a sparse matrix in CSR format
 struct CSRMatrix {
