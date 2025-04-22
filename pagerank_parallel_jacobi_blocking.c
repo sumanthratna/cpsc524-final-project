@@ -457,6 +457,29 @@ int main(int argc, char** argv)
     Pagerank();
 	gettimeofday(&end, NULL);  
 
+	// Print top 10 pages by rank
+    printf("\nTop 10 pages by rank:\n");
+    
+    // Create array of indices for sorting
+    int *indices = (int*)malloc(N * sizeof(int));
+    for(i = 0; i < N; i++) {
+        indices[i] = i;
+    }
+    
+    // Sort indices based on page rank values
+    for(i = 0; i < 10; i++) {
+        for(int j = i+1; j < N; j++) {
+            if(Nodes[indices[j]].p_t1 > Nodes[indices[i]].p_t1) {
+                int temp = indices[i];
+                indices[i] = indices[j]; 
+                indices[j] = temp;
+            }
+        }
+        printf("%d. Page %d (rank: %f)\n", i+1, indices[i], Nodes[indices[i]].p_t1);
+    }
+    
+    free(indices);
+
     /*for (i = 0; i < N; i++)
     {
         printf("P_t1[%d] = %f\n",i, Nodes[i].p_t1);
