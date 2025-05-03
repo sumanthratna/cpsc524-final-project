@@ -1,15 +1,32 @@
+# C Compiler + Flags
 CC = gcc
-FLG = -O4
-LDLIBS = -lpthread -lm
+CFLAGS = -O4
+CLIBS = -lpthread -lm
 
-PROGS = serial_jacobi jacobi_blocking guess_seidel guess_seidel_batched guess_seidel_cache gauss_seidel_blocking
+# C++ Compiler + Flags
+# CXX = /opt/homebrew/opt/gcc/bin/g++-14 # for buwei
+CXX = g++ # for micah
+CXXFLAGS = -std=c++17 -O3 -fopenmp -pthread
+PARLAY_INC = -I parlaylib/include
+
+# Executables (C and C++)
+C_PROGS = serial_jacobi jacobi_blocking guess_seidel guess_seidel_batched guess_seidel_cache gauss_seidel_blocking
+CXX_PROGS = delta_push parlay_jacobi random_walk
+
+# All executables
+PROGS = $(C_PROGS) $(CXX_PROGS)
 
 all: $(PROGS)
 
-%: %.c
-	$(CC) $(FLG) $< -o $@ $(LDLIBS)
+# C rule
+$(C_PROGS): %: %.c
+	$(CC) $(CFLAGS) $< -o $@ $(CLIBS)
 
-# Positional benchmark: make benchmark <prog> <graph> <threshold>
+# C++ rule (uses Parlay include for all C++ sources)
+$(CXX_PROGS): %: %.cpp
+	$(CXX) $(CXXFLAGS) $(PARLAY_INC) $< -o $@
+
+# Benchmark single
 benchmark:
 	@if [ "$(word 1,$(MAKECMDGOALS))" = "benchmark" ]; then \
 		echo "Usage: make benchmark <prog> <graph> <threshold>"; \
@@ -21,7 +38,7 @@ benchmark:
 		./$$EXEC $$GRAPH 916428 $$THRESH 0.85 8; \
 	fi; exit 0
 
-# Positional benchmark-all: make benchmark-all <graph> <threshold>
+# Benchmark all
 benchmark-all:
 	GRAPH=$(word 2,$(MAKECMDGOALS)); \
 	THRESH=$(word 3,$(MAKECMDGOALS)); \
@@ -34,6 +51,6 @@ benchmark-all:
 clean:
 	rm -f $(PROGS) *.o *.out *.exe *.bin
 
-# Hack to prevent Make from treating args as targets
+# Hack to ignore extra args
 %::
 	@:

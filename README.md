@@ -4,6 +4,8 @@ Sumanth Ratna, Micah Gold, Buwei Chen
 
 ## Instructions to Run
 
+Potentially need to change g++ location (line 8-9) in makefile.
+
 1. `make all`
 
 To run one program:
