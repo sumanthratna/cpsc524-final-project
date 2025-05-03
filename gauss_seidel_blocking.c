@@ -1,12 +1,3 @@
-// ./pagerank web-Google.txt 916428 0.00001 0.85 8
-
-/********************************************************************/
-/*    Pagerank project 2014 - Parallel version                      */
-/*    	*based on Cleve Moler's matlab implementation               */
-/*                                                                  */
-/*    Implemented by Nikos Katirtzis (nikos912000)                  */
-/********************************************************************/
-
 /******************** Includes - Defines ****************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,8 +7,6 @@
 #include <assert.h>
 #include <string.h>
 #include <pthread.h>
-#include <unistd.h>  // for usleep
-#include <stdatomic.h>
 
 
 /***** Struct for timestamps *****/
@@ -35,8 +24,7 @@ typedef struct
 
 typedef struct
 {
-	double p_t0;
-	double p_t1;
+	double p;
 	double e;
 	int *From_id;
 	int con_size;
@@ -70,13 +58,8 @@ int num_threads;
 // Number of iterations
 int iterations = 0;
 
-// Update shared variables to be atomic
-_Atomic double sum = 0;
-_Atomic double max_error = 1;
-_Atomic int active_threads = 0;
-
-// Add thread completion tracking
-_Atomic int completed_threads = 0;
+double max_error = 1;
+double sum = 0;
 
 /***** Memory allocation - Initializations for Threads *****/
 
@@ -142,32 +125,34 @@ void Nodes_Allocation()
 
 void Read_from_txt_file(char* filename)
 {
+    
     FILE *fid;
+
     int from_idx, to_idx;
-    int temp_size;
-    char line[1000];
+	int temp_size;
+	char line[1000];
 
     fid = fopen("web-Google.txt", "r");
-    if (fid == NULL){printf("Error opening the file\n");}
+   	if (fid == NULL){printf("Error opening the file\n");}
 
-    while (!feof(fid))
-    {
-        if (fgets(line, sizeof(line), fid) == NULL) {
-            break;
-        }
-        // ignore sentences starting from #
-        if (sscanf(line,"%d\t%d\n", &from_idx, &to_idx))
-        {
-            Nodes[from_idx].con_size++;
-            Nodes[to_idx].from_size++;
-            temp_size = Nodes[to_idx].from_size;
-            Nodes[to_idx].From_id = (int*) realloc(Nodes[to_idx].From_id, temp_size * sizeof(int));
-            Nodes[to_idx].From_id[temp_size - 1] = from_idx; 
-        }
-    }
+	while (!feof(fid))
+	{
+		fgets(line, sizeof(line), fid);
+		// ignore sentences starting from #
+		if (sscanf(line,"%d\t%d\n", &from_idx, &to_idx))
+		{
+			Nodes[from_idx].con_size++;
+			Nodes[to_idx].from_size++;
+			temp_size = Nodes[to_idx].from_size;
+			Nodes[to_idx].From_id = (int*) realloc(Nodes[to_idx].From_id, temp_size * sizeof(int));
+			Nodes[to_idx].From_id[temp_size - 1] = from_idx; 
+		}
+	}
 
-    printf("End of connections insertion!\n");
-    fclose(fid);
+	printf("End of connections insertion!\n");
+
+	fclose(fid);
+
 }
 
 /***** Read P vector from txt file*****/	
@@ -187,7 +172,7 @@ void Read_P_from_txt_file()
 		// P's values are double!
 		if (fscanf(fid,"%lf\n", &temp_P))
 		{
-			Nodes[index].p_t1 = temp_P;
+			Nodes[index].p = temp_P;
 			index++;	   
 		}
 	}
@@ -240,14 +225,10 @@ void Random_P_E()
     // Arrays initialization
     for (i = 0; i < N; i++)
     {
-        Nodes[i].p_t0 = 0;
-        Nodes[i].p_t1 = 1;
-        Nodes[i].p_t1 = (double) Nodes[i].p_t1 / N;
-
-        sum_P_1 = sum_P_1 + Nodes[i].p_t1;
+        Nodes[i].p = 1.0 / N;
+        sum_P_1 = sum_P_1 + Nodes[i].p;
         
-		Nodes[i].e = 1;
-        Nodes[i].e = (double) Nodes[i].e / N;
+		Nodes[i].e = 1.0 / N;
         sum_E_1 = sum_E_1 + Nodes[i].e;
     }
 
@@ -269,146 +250,99 @@ void Random_P_E()
 
 }
 
-/***** Re-initialize P(t) and P(t + 1) values *****/
-
-void* P_reinit(void* arg)
+void* Compute_Dangling_Sum(void* arg)
 {
-    Thread *thread_data = (Thread *)arg;
+    Thread *thread_data = (Thread *) arg;
     int i;
+    double local_sum = 0.0;
 
-    for (i = thread_data->start; i < thread_data->end; i++)
-    {
-        Nodes[i].p_t0 = Nodes[i].p_t1;    
-        Nodes[i].p_t1 = 0;
+    for (i = thread_data->start; i < thread_data->end; i++) {
+        if (Nodes[i].con_size == 0) {
+            local_sum += Nodes[i].p;
+        }
     }
-    atomic_fetch_add(&completed_threads, 1);
-    return 0;
+
+    pthread_mutex_lock(&locksum);
+    sum += local_sum;
+    pthread_mutex_unlock(&locksum);
+
+    return NULL;
 }
+
 
 /***** Main parallel algorithm *****/
 
 void* Pagerank_Parallel(void* arg)
 {
     Thread *thread_data = (Thread *) arg;
-    int i, j, index;
-    double temp_sum = 0;
+    int i, j, from_idx;
+    double local_max = 0.0;
+    double rank_sum, p_old;
 
-    for (i = thread_data->start; i < thread_data->end; i++)
-    {
-        if (Nodes[i].con_size == 0)
-        {
-            temp_sum = temp_sum + (double) Nodes[i].p_t0 / N;
-        }
+    for (i = thread_data->start; i < thread_data->end; i++) {
+        rank_sum = 0.0;
 
-        if (Nodes[i].from_size != 0)
-        {
-            for (j = 0; j < Nodes[i].from_size; j++)
-            {
-                index = Nodes[i].From_id[j];    
-                Nodes[i].p_t1 = Nodes[i].p_t1 + (double) Nodes[index].p_t0 / Nodes[index].con_size;
+        for (j = 0; j < Nodes[i].from_size; j++) {
+            from_idx = Nodes[i].From_id[j];
+            if (Nodes[from_idx].con_size > 0) {
+                rank_sum += Nodes[from_idx].p / Nodes[from_idx].con_size;
             }
-        }        
-    }
-    
-    // Atomic add to global sum using atomic_fetch_add_explicit
-    double current_sum;
-    do {
-        current_sum = atomic_load_explicit(&sum, memory_order_relaxed);
-    } while (!atomic_compare_exchange_weak_explicit(&sum, &current_sum, current_sum + temp_sum,
-                                                  memory_order_release, memory_order_relaxed));
-    atomic_fetch_add(&completed_threads, 1);
-    return 0;
-}
-
-/***** Compute local max (thread's data max) *****/
-void* Local_Max(void* arg)
-{
-    Thread *thread_data = (Thread *) arg;
-    int i, j;
-    double temp_max = -1;
-
-    for (i = thread_data->start; i < thread_data->end; i++)
-    {
-        double current_sum = atomic_load_explicit(&sum, memory_order_acquire);
-        Nodes[i].p_t1 = d * (Nodes[i].p_t1 + current_sum) + (1 - d) * Nodes[i].e;
- 
-        if (fabs(Nodes[i].p_t1 - Nodes[i].p_t0) > temp_max)
-        {
-            temp_max = fabs(Nodes[i].p_t1 - Nodes[i].p_t0);
         }
+
+        p_old = Nodes[i].p;
+
+        // Handle dangling nodes: sum of ranks from them gets added outside
+        Nodes[i].p = d * (rank_sum + sum) + (1.0 - d) * Nodes[i].e;
+
+        double delta = fabs(Nodes[i].p - p_old);
+        if (delta > local_max) local_max = delta;
     }
 
-    // Atomic compare and swap for max_error
-    double current_max;
-    do {
-        current_max = atomic_load_explicit(&max_error, memory_order_relaxed);
-        if (temp_max <= current_max) break;
-    } while (!atomic_compare_exchange_weak_explicit(&max_error, &current_max, temp_max,
-                                                  memory_order_release, memory_order_relaxed));
-    
-    atomic_fetch_add(&completed_threads, 1);
-    return 0;
+    // Thread-local max → global max_error
+    pthread_mutex_lock(&lockmax);
+    if (local_max > max_error) max_error = local_max;
+    pthread_mutex_unlock(&lockmax);
+
+    return NULL;
 }
 
 /***** Pagerank main algortihm *****/
 void Pagerank()
 {
     int i;
-    pthread_t *threads_phase1 = malloc(num_threads * sizeof(pthread_t));
-    pthread_t *threads_phase2 = malloc(num_threads * sizeof(pthread_t));
-    pthread_t *threads_phase3 = malloc(num_threads * sizeof(pthread_t));
     
-    while (atomic_load_explicit(&max_error, memory_order_acquire) > threshold)
-    {
-        atomic_store_explicit(&max_error, -1, memory_order_release);
-        atomic_store_explicit(&sum, 0, memory_order_release);
-        atomic_store(&completed_threads, 0);
-        
-        // Phase 1: Reinitialization
-        for (i = 0; i < num_threads; i++)
-        {
-            pthread_create(&threads_phase1[i], NULL, &P_reinit, (void*) &Threads_data[i]);
-        }
-        
-        // Wait for phase 1 to complete
-        while (atomic_load(&completed_threads) < num_threads) {
-            usleep(25);
-        }
-        
-        atomic_store(&completed_threads, 0);
-        
-        // Phase 2: PageRank computation
-        for (i = 0; i < num_threads; i++)
-        {
-            pthread_create(&threads_phase2[i], NULL, &Pagerank_Parallel, (void*) &Threads_data[i]);   
-        }
-        
-        // Wait for phase 2 to complete
-        while (atomic_load(&completed_threads) < num_threads) {
-            usleep(25);
-        }
-        
-        atomic_store(&completed_threads, 0);
-        
-        // Phase 3: Local max computation
-        for (i = 0; i < num_threads; i++)
-        {
-            pthread_create(&threads_phase3[i], NULL, &Local_Max, (void*) &Threads_data[i]);   
-        }
-        
-        // Wait for phase 3 to complete
-        while (atomic_load(&completed_threads) < num_threads) {
-            usleep(25);
-        }
-        
-        printf("Max Error in iteration %d = %f\n", iterations+1, atomic_load_explicit(&max_error, memory_order_acquire));
+    while (max_error > threshold) {
         iterations++;
+        max_error = 0.0;
+        sum = 0.0;
+
+        // Step 1: Compute dangling node contribution
+        for (i = 0; i < num_threads; i++)
+            pthread_create(&Threads[i], NULL, &Compute_Dangling_Sum, (void*) &Threads_data[i]);
+        for (i = 0; i < num_threads; i++)
+            pthread_join(Threads[i], NULL);
+
+        sum /= N;
+
+        // Step 2: Gauss-Seidel update
+        for (i = 0; i < num_threads; i++)
+            pthread_create(&Threads[i], NULL, &Pagerank_Parallel, (void*) &Threads_data[i]);
+        for (i = 0; i < num_threads; i++)
+            pthread_join(Threads[i], NULL);
+
+        // Step 3: Normalize PageRank vector
+        double total = 0.0;
+        for (i = 0; i < N; i++) {
+            total += Nodes[i].p;
+        }
+        for (i = 0; i < N; i++) {
+            Nodes[i].p /= total;
+        }
+
+        printf("Max Error in iteration %d = %f\n", iterations, max_error);
     }
-    
-    free(threads_phase1);
-    free(threads_phase2);
-    free(threads_phase3);
 }
+
 
 
 /***** main function *****/   
@@ -460,6 +394,29 @@ int main(int argc, char** argv)
     gettimeofday(&start, NULL);
     Pagerank();
 	gettimeofday(&end, NULL);  
+
+	// Print top 10 pages by rank
+    printf("\nTop 10 pages by rank:\n");
+    
+    // Create array of indices for sorting
+    int *indices = (int*)malloc(N * sizeof(int));
+    for(i = 0; i < N; i++) {
+        indices[i] = i;
+    }
+    
+    // Sort indices based on page rank values
+    for(i = 0; i < 10; i++) {
+        for(int j = i+1; j < N; j++) {
+            if(Nodes[indices[j]].p > Nodes[indices[i]].p) {
+                int temp = indices[i];
+                indices[i] = indices[j]; 
+                indices[j] = temp;
+            }
+        }
+        printf("%d. Page %d (rank: %f)\n", i+1, indices[i], Nodes[indices[i]].p);
+    }
+    
+    free(indices);
 
     /*for (i = 0; i < N; i++)
     {

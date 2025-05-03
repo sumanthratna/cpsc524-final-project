@@ -1,35 +1,39 @@
-# CC = gcc
-# FLG = -O4
-# NAME = pagerank_ags
-
-# pagerank_ags: pagerank_parallel_gaussseidel.c pagerank_pthreads.h
-
-# 	$(CC) pagerank_parallel_gaussseidel.c -lpthread -lm -o $(NAME)
-
-# clean:
-# 	rm -f *.o *.out *.exe
-# 	rm -f *.bin
-
-# CC = gcc
-# FLG = -O4
-# NAME = pagerank_pthreads
-
-# pagerank_pthreads: pagerank_parallel_jacobi_blocking.c pagerank_pthreads.h
-
-# 	$(CC) pagerank_parallel_jacobi_blocking.c -lpthread -lm -o $(NAME)
-
-# clean:
-# 	rm -f *.o *.out *.exe
-# 	rm -f *.bin
-
 CC = gcc
 FLG = -O4
-NAME = pagerank_serial
+LDLIBS = -lpthread -lm
 
-pagerank_serial: pagerank_serial.cpp pagerank_pthreads.h
+PROGS = serial_jacobi jacobi_blocking guess_seidel guess_seidel_batched guess_seidel_cache gauss_seidel_blocking
 
-	$(CC) pagerank_serial.cpp -lpthread -lm -o $(NAME)
+all: $(PROGS)
+
+%: %.c
+	$(CC) $(FLG) $< -o $@ $(LDLIBS)
+
+# Positional benchmark: make benchmark <prog> <graph> <threshold>
+benchmark:
+	@if [ "$(word 1,$(MAKECMDGOALS))" = "benchmark" ]; then \
+		echo "Usage: make benchmark <prog> <graph> <threshold>"; \
+	else \
+		EXEC=$(word 2,$(MAKECMDGOALS)); \
+		GRAPH=$(word 3,$(MAKECMDGOALS)); \
+		THRESH=$(word 4,$(MAKECMDGOALS)); \
+		echo "Running ./$$EXEC $$GRAPH 916428 $$THRESH 0.85 8"; \
+		./$$EXEC $$GRAPH 916428 $$THRESH 0.85 8; \
+	fi; exit 0
+
+# Positional benchmark-all: make benchmark-all <graph> <threshold>
+benchmark-all:
+	GRAPH=$(word 2,$(MAKECMDGOALS)); \
+	THRESH=$(word 3,$(MAKECMDGOALS)); \
+	for prog in $(PROGS); do \
+		echo "=== Running $$prog with $$GRAPH $$THRESH ==="; \
+		./$$prog $$GRAPH 916428 $$THRESH 0.85 8 || echo "$$prog failed"; \
+		echo ""; \
+	done; exit 0
 
 clean:
-	rm -f *.o *.out *.exe
-	rm -f *.bin
+	rm -f $(PROGS) *.o *.out *.exe *.bin
+
+# Hack to prevent Make from treating args as targets
+%::
+	@:
