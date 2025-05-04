@@ -16,7 +16,7 @@ PROGS = $(C_PROGS) $(CXX_PROGS)
 all: $(PROGS)
 
 # Build rules
-$(C_PROGS): %: %.c pagerank_common.c
+$(C_PROGS): %: %.c
 	$(CC) $(CFLAGS) $< -o $@ $(CLIBS)
 
 $(CXX_PROGS): %: %.cpp
