@@ -1,4 +1,4 @@
-pagerank
+
 
 # Prerequisites
 *.d
@@ -58,3 +58,6 @@ dkms.conf
 # Fortran module files
 *.mod
 *.smod
+
+# data
+/data/*.txt

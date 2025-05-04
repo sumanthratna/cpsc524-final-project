@@ -4,14 +4,14 @@ CFLAGS = -O4
 CLIBS = -lpthread -lm
 
 # C++ Compiler + Flags
-# CXX = /opt/homebrew/opt/gcc/bin/g++-14 # for buwei
-CXX = g++ # for micah
+CXX = /opt/homebrew/opt/gcc/bin/g++-14 # for buwei
+# CXX = g++ # for micah
 CXXFLAGS = -std=c++17 -O3 -fopenmp -pthread
 PARLAY_INC = -I parlaylib/include
 
 # Executables (C and C++)
 C_PROGS = serial_jacobi jacobi_blocking guess_seidel guess_seidel_batched guess_seidel_cache gauss_seidel_blocking
-CXX_PROGS = delta_push parlay_jacobi random_walk
+CXX_PROGS = delta_push parlay_jacobi random_walk gmres
 
 # All executables
 PROGS = $(C_PROGS) $(CXX_PROGS)
@@ -28,15 +28,12 @@ $(CXX_PROGS): %: %.cpp
 
 # Benchmark single
 benchmark:
-	@if [ "$(word 1,$(MAKECMDGOALS))" = "benchmark" ]; then \
-		echo "Usage: make benchmark <prog> <graph> <threshold>"; \
-	else \
 		EXEC=$(word 2,$(MAKECMDGOALS)); \
 		GRAPH=$(word 3,$(MAKECMDGOALS)); \
 		THRESH=$(word 4,$(MAKECMDGOALS)); \
 		echo "Running ./$$EXEC $$GRAPH 916428 $$THRESH 0.85 8"; \
 		./$$EXEC $$GRAPH 916428 $$THRESH 0.85 8; \
-	fi; exit 0
+	exit 0
 
 # Benchmark all
 benchmark-all:
