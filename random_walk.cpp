@@ -157,25 +157,26 @@ parlay::sequence<double> monte_carlo_pagerank(const Graph &G,
 }
 
 int main(int argc, char** argv) {
-  if (argc < 2) {
+  if (argc < 5) {
     std::cerr << "Usage: " << argv[0]
-              << " <edge_list.txt> [num_vertices]"
-                 " [num_walkers] [walk_length]"
-                 " [damping]     [num_threads]\n";
+              << " <graph_filename> <N> <threshold> <damping> <num_threads>\n";
     return 1;
   }
 
   std::string file       = argv[1];
-  size_t      num_v       = (argc > 2 ? std::stoull(argv[2]) : 0);
-  size_t      num_walkers = (argc > 3 ? std::stoull(argv[3]) : 1000000);
-  size_t      walk_length = (argc > 4 ? std::stoull(argv[4]) : 50);
-  double      damping     = (argc > 5 ? std::stod(argv[5])    : 0.85);
-  int         num_threads = (argc > 6 ? std::stoi(argv[6])    : omp_get_max_threads());
+  size_t      num_v      = std::stoull(argv[2]);
+  double      threshold  = std::stod(argv[3]);
+  double      damping    = std::stod(argv[4]);
+  int         num_threads = std::stoi(argv[5]);
+
+  // Set reasonable defaults for Monte Carlo parameters
+  size_t num_walkers = 1000000;  // 1 million walkers
+  size_t walk_length = 50;       // 50 steps per walk
 
   std::cout << "Loading graph...\n";
   Graph G = Graph::load_and_build(file, num_v);
   std::cout << "Vertices: " << G.n
-            << "   Edges: "     << G.out_edges.size() << "\n";
+            << "   Edges: " << G.out_edges.size() << "\n";
 
   struct timeval t0, t1;
   gettimeofday(&t0, nullptr);
