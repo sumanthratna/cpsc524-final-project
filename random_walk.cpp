@@ -13,32 +13,31 @@
 //                  [num_walkers] [walk_length]
 //                  [damping]     [num_threads]
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
 #include <cmath>
-#include <sys/time.h>
+#include <fstream>
+#include <iostream>
 #include <omp.h>
+#include <sstream>
+#include <string>
+#include <sys/time.h>
+#include <vector>
 
-#include "parlaylib/include/parlay/parallel.h"
-#include "parlaylib/include/parlay/sequence.h"
-#include "parlaylib/include/parlay/primitives.h"
 #include "pagerank_utils.hpp"
+#include "parlaylib/include/parlay/parallel.h"
+#include "parlaylib/include/parlay/primitives.h"
+#include "parlaylib/include/parlay/sequence.h"
 
 // Monte Carlo random‐walk PageRank
 parlay::sequence<double> monte_carlo_pagerank(const Graph &G,
                                               size_t num_walkers,
                                               size_t walk_length,
-                                              double damping,
-                                              int num_threads) {
+                                              double damping, int num_threads) {
   size_t n = G.n;
   // per-thread local visit counts
   parlay::sequence<parlay::sequence<size_t>> local_counts(
-    num_threads, parlay::sequence<size_t>(n, 0));
+      num_threads, parlay::sequence<size_t>(n, 0));
 
-  #pragma omp parallel num_threads(num_threads)
+#pragma omp parallel num_threads(num_threads)
   {
     int tid = omp_get_thread_num();
     auto &counts = local_counts[tid];
@@ -47,14 +46,14 @@ parlay::sequence<double> monte_carlo_pagerank(const Graph &G,
 
     // round‐robin assign walkers
     for (size_t w = tid; w < num_walkers; w += num_threads) {
-      size_t node = rng() % n;           // random start
+      size_t node = rng() % n; // random start
       for (size_t step = 0; step < walk_length; ++step) {
         if (dist(rng) < damping && G.out_degrees[node] > 0) {
           size_t off = G.out_offsets[node];
-          size_t deg = G.out_offsets[node+1] - off;
+          size_t deg = G.out_offsets[node + 1] - off;
           node = G.out_edges[off + (rng() % deg)];
         } else {
-          node = rng() % n;               // teleport
+          node = rng() % n; // teleport
         }
       }
       counts[node]++;
@@ -65,21 +64,21 @@ parlay::sequence<double> monte_carlo_pagerank(const Graph &G,
   parlay::sequence<size_t> counts(n);
   parlay::parallel_for(0, n, [&](size_t i) {
     size_t s = 0;
-    for (int t = 0; t < num_threads; ++t) s += local_counts[t][i];
+    for (int t = 0; t < num_threads; ++t)
+      s += local_counts[t][i];
     counts[i] = s;
   });
 
   // normalize to get ranks
   parlay::sequence<double> ranks(n);
   double total = (double)num_walkers;
-  parlay::parallel_for(0, n, [&](size_t i) {
-    ranks[i] = (double)counts[i] / total;
-  });
+  parlay::parallel_for(0, n,
+                       [&](size_t i) { ranks[i] = (double)counts[i] / total; });
 
   return ranks;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   if (argc < 5) {
     std::cerr << "Usage: " << argv[0]
               << " <graph_filename> <N> <threshold> <damping> <num_threads>\n";
@@ -93,21 +92,18 @@ int main(int argc, char** argv) {
   int num_threads = std::stoi(argv[5]);
 
   // Set reasonable defaults for Monte Carlo parameters
-  size_t num_walkers = 1000000;  // 1 million walkers
-  size_t walk_length = 50;       // 50 steps per walk
+  size_t num_walkers = 1000000; // 1 million walkers
+  size_t walk_length = 50;      // 50 steps per walk
 
   std::cout << "Loading graph...\n";
   Graph G = Graph::load_and_build(file, num_v);
-  std::cout << "Vertices: " << G.n
-            << "   Edges: " << G.out_edges.size() << "\n";
+  std::cout << "Vertices: " << G.n << "   Edges: " << G.out_edges.size()
+            << "\n";
 
   struct timeval t0, t1;
   gettimeofday(&t0, nullptr);
-  auto ranks = monte_carlo_pagerank(G,
-                                    num_walkers,
-                                    walk_length,
-                                    damping,
-                                    num_threads);
+  auto ranks =
+      monte_carlo_pagerank(G, num_walkers, walk_length, damping, num_threads);
   gettimeofday(&t1, nullptr);
 
   double secs = get_elapsed_time(t0, t1);
