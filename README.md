@@ -11,7 +11,7 @@ CXX_PROGS = delta_push parlay_jacobi random_walk
 - [`jacobi_blocking`](./jacobi_blocking.c)
 - [`guess_seidel`](./guess_seidel.c)
 - [`guess_seidel_cache`](./guess_seidel_cache.c)
-- [`gauss_seidel_blocking`g](./gauss_seidel_blocking.c)
+- [`gauss_seidel_blocking`](./gauss_seidel_blocking.c)
 - [`delta_push`](./delta_push.cpp)
 - [`parlay_jacobi`](./parlay_jacobi.cpp)
 - [`random_walk`](./random_walk.cpp)
