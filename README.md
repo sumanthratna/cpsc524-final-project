@@ -22,4 +22,6 @@ Potentially need to change g++ location (line 8-9) in makefile.
 
 1. To compile: `make`
 
-2. To run one implementation: `./run_benchmark.sh delta_push web-Google.txt 0.000001`
+2. To run one implementation: `./run_benchmark.sh delta_push datasets/web-Google.txt 0.000001`
+
+You can see a list of datasets [here](./datasets/). The third parameter is the convergence threshold. 

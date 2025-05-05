@@ -1,3 +1,12 @@
+delta_push
+gauss_seidel_blocking
+guess_seidel
+guess_seidel_cache
+jacobi_blocking
+parlay_jacobi
+random_walk
+serial_jacobi
+
 # Prerequisites
 *.d
 
