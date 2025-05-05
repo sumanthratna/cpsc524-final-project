@@ -1,8 +1,10 @@
 # Datasets
 
+## Catalog
+
 Datasets are large so they are on gitignore list. Decompress the .gz files before use.
 
-NOTE: gplus_combined.txt.gz and soc-pokec-relationships.txt.gz are too large for GitHub, even compressed. Follow links below to download.
+NOTE: gplus_combined.txt.gz and soc-pokec-relationships.txt.gz are too large for GitHub, even compressed. Follow the links below to download.
 
 | Dataset | Vertices (V) | Edges (E) | Density (E/V²) |
 |---------|-------------|-----------|----------------|
@@ -17,3 +19,11 @@ NOTE: gplus_combined.txt.gz and soc-pokec-relationships.txt.gz are too large for
 | [wiki-Talk](https://snap.stanford.edu/data/wiki-Talk.html) | 2,394,385 | 5,021,410 | 0.000000877 |
 
 Find more datasets at: https://snap.stanford.edu/data/index.html#web
+
+## Downloading
+
+To download gplus_combined and soc-pokec-relationships: `wget https://snap.stanford.edu/data/gplus_combined.txt.gz https://snap.stanford.edu/data/soc-pokec-relationships.txt.gz`
+
+## Decompressing
+
+To unzip all `.tar.gz` archives: `for file in *.tar.gz; do tar -xzf "$file"; done`
