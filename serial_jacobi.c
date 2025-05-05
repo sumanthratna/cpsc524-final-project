@@ -10,13 +10,13 @@
 
 /******************** Includes - Defines ****************/
 #include <assert.h>
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
-#include <limits.h>
 
 /***** Struct for timestamps *****/
 struct timeval start, end;
@@ -29,7 +29,7 @@ typedef struct {
   double e;
   int *To_id;
   int con_size;
-  int original_id;  // Store original node ID
+  int original_id; // Store original node ID
 } Node;
 
 /******************** Defines ****************/
@@ -62,10 +62,14 @@ void Read_from_txt_file(char *filename) {
   while (fgets(line, sizeof(line), fid) != NULL) {
     if (strncmp(line, "#", 1) != 0) {
       if (sscanf(line, "%d\t%d\n", &from_idx, &to_idx)) {
-        if (from_idx > max_id) max_id = from_idx;
-        if (to_idx > max_id) max_id = to_idx;
-        if (from_idx < min_id) min_id = from_idx;
-        if (to_idx < min_id) min_id = to_idx;
+        if (from_idx > max_id)
+          max_id = from_idx;
+        if (to_idx > max_id)
+          max_id = to_idx;
+        if (from_idx < min_id)
+          min_id = from_idx;
+        if (to_idx < min_id)
+          min_id = to_idx;
       }
     }
   }
@@ -79,7 +83,7 @@ void Read_from_txt_file(char *filename) {
 
   // Initialize mapping
   for (int i = 0; i < id_range; i++) {
-    id_to_idx[i] = -1;  // -1 indicates unmapped
+    id_to_idx[i] = -1; // -1 indicates unmapped
   }
 
   // Second pass: build mapping and read edges
@@ -112,7 +116,8 @@ void Read_from_txt_file(char *filename) {
         // Update graph structure
         Nodes[mapped_from].con_size++;
         temp_size = Nodes[mapped_from].con_size;
-        Nodes[mapped_from].To_id = (int *)realloc(Nodes[mapped_from].To_id, temp_size * sizeof(int));
+        Nodes[mapped_from].To_id =
+            (int *)realloc(Nodes[mapped_from].To_id, temp_size * sizeof(int));
         Nodes[mapped_from].To_id[temp_size - 1] = mapped_to;
       }
     }
@@ -359,7 +364,8 @@ int main(int argc, char **argv) {
         indices[j] = temp;
       }
     }
-    printf("%d. Page %d (rank: %f)\n", i + 1, Nodes[indices[i]].original_id, Nodes[indices[i]].p_t1);
+    printf("%d. Page %d (rank: %f)\n", i + 1, Nodes[indices[i]].original_id,
+           Nodes[indices[i]].p_t1);
   }
 
   printf("End of program!\n");

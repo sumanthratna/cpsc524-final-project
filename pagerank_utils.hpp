@@ -9,8 +9,8 @@
 #include <sstream>
 #include <string>
 #include <sys/time.h>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 // Common constants
 constexpr double DEFAULT_DAMPING = 0.85; // damping factor
@@ -23,7 +23,8 @@ struct Graph {
   parlay::sequence<size_t> out_degrees;
   parlay::sequence<size_t> out_offsets, out_edges;
   parlay::sequence<size_t> in_offsets, in_edges;
-  std::unordered_map<size_t, size_t> id_to_idx; // Map from original IDs to contiguous indices
+  std::unordered_map<size_t, size_t>
+      id_to_idx;                 // Map from original IDs to contiguous indices
   std::vector<size_t> idx_to_id; // Map from contiguous indices to original IDs
 
   static Graph load_and_build(const std::string &filename,
@@ -59,7 +60,7 @@ struct Graph {
     G.n = n;
     G.id_to_idx = id_to_idx;
     G.idx_to_id.resize(n);
-    for (const auto& [id, idx] : id_to_idx) {
+    for (const auto &[id, idx] : id_to_idx) {
       G.idx_to_id[idx] = id;
     }
 
@@ -121,8 +122,8 @@ struct Graph {
 };
 
 // Utility function to print top pages
-inline void print_top_pages(const parlay::sequence<double> &ranks, const Graph& G,
-                            size_t num_to_print = 10) {
+inline void print_top_pages(const parlay::sequence<double> &ranks,
+                            const Graph &G, size_t num_to_print = 10) {
   std::vector<std::pair<double, size_t>> top;
   top.reserve(G.n);
   for (size_t i = 0; i < G.n; i++)
