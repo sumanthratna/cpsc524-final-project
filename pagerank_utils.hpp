@@ -10,6 +10,7 @@
 #include <string>
 #include <sys/time.h>
 #include <vector>
+#include <unordered_map>
 
 // Common constants
 constexpr double DEFAULT_DAMPING = 0.85; // damping factor
@@ -22,6 +23,8 @@ struct Graph {
   parlay::sequence<size_t> out_degrees;
   parlay::sequence<size_t> out_offsets, out_edges;
   parlay::sequence<size_t> in_offsets, in_edges;
+  std::unordered_map<size_t, size_t> id_to_idx; // Map from original IDs to contiguous indices
+  std::vector<size_t> idx_to_id; // Map from contiguous indices to original IDs
 
   static Graph load_and_build(const std::string &filename,
                               size_t num_vertices = 0) {
@@ -29,9 +32,10 @@ struct Graph {
     if (!file.is_open())
       throw std::runtime_error("Cannot open " + filename);
 
-    // --- 1) read edge list into std::vector ---
-    size_t src, dst, max_id = 0;
+    // --- 1) read edge list and build ID mapping ---
+    size_t src, dst;
     std::vector<std::pair<size_t, size_t>> edges;
+    std::unordered_map<size_t, size_t> id_to_idx;
     std::string line;
     while (std::getline(file, line)) {
       if (line.empty() || line[0] == '#')
@@ -39,19 +43,32 @@ struct Graph {
       std::istringstream in(line);
       if (in >> src >> dst) {
         edges.emplace_back(src, dst);
-        max_id = std::max(max_id, std::max(src, dst));
+        // Add both source and destination to mapping if not present
+        if (id_to_idx.find(src) == id_to_idx.end()) {
+          id_to_idx[src] = id_to_idx.size();
+        }
+        if (id_to_idx.find(dst) == id_to_idx.end()) {
+          id_to_idx[dst] = id_to_idx.size();
+        }
       }
     }
     file.close();
 
-    size_t n = num_vertices > 0 ? num_vertices : (max_id + 1);
+    size_t n = num_vertices > 0 ? num_vertices : id_to_idx.size();
     Graph G;
     G.n = n;
+    G.id_to_idx = id_to_idx;
+    G.idx_to_id.resize(n);
+    for (const auto& [id, idx] : id_to_idx) {
+      G.idx_to_id[idx] = id;
+    }
 
     // --- 2) build outgoing CSR (deg, offsets, edges) ---
     std::vector<size_t> deg(n, 0);
-    for (auto &e : edges)
-      deg[e.first]++;
+    for (auto &e : edges) {
+      size_t u = id_to_idx[e.first];
+      deg[u]++;
+    }
 
     std::vector<size_t> out_offsets(n + 1);
     out_offsets[0] = 0;
@@ -62,15 +79,18 @@ struct Graph {
     { // fill
       auto cursor = out_offsets;
       for (auto &e : edges) {
-        size_t u = e.first, v = e.second;
+        size_t u = id_to_idx[e.first];
+        size_t v = id_to_idx[e.second];
         out_edges[cursor[u]++] = v;
       }
     }
 
     // --- 3) build reverse CSR (in-degrees, offsets, edges) ---
     std::vector<size_t> in_deg(n, 0);
-    for (auto &e : edges)
-      in_deg[e.second]++;
+    for (auto &e : edges) {
+      size_t v = id_to_idx[e.second];
+      in_deg[v]++;
+    }
 
     std::vector<size_t> in_offsets(n + 1);
     in_offsets[0] = 0;
@@ -81,7 +101,8 @@ struct Graph {
     { // fill
       auto cursor = in_offsets;
       for (auto &e : edges) {
-        size_t u = e.first, v = e.second;
+        size_t u = id_to_idx[e.first];
+        size_t v = id_to_idx[e.second];
         in_edges[cursor[v]++] = u;
       }
     }
@@ -100,12 +121,12 @@ struct Graph {
 };
 
 // Utility function to print top pages
-inline void print_top_pages(const parlay::sequence<double> &ranks, size_t n,
+inline void print_top_pages(const parlay::sequence<double> &ranks, const Graph& G,
                             size_t num_to_print = 10) {
   std::vector<std::pair<double, size_t>> top;
-  top.reserve(n);
-  for (size_t i = 0; i < n; i++)
-    top.emplace_back(ranks[i], i);
+  top.reserve(G.n);
+  for (size_t i = 0; i < G.n; i++)
+    top.emplace_back(ranks[i], G.idx_to_id[i]);
   std::sort(top.begin(), top.end(),
             [&](auto &a, auto &b) { return a.first > b.first; });
   std::cout << "Top " << num_to_print << " pages by rank:\n";

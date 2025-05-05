@@ -10,8 +10,7 @@ GRAPH=$2
 THRESH=$3
 
 # Get number of vertices based on graph name
-# TODO: node labels for gplus_combined, twitter_combined
-# TODO: final error=inf and ranks 0 for web-BerkStan
+# TODO: node labels for gplus_combined
 case "$GRAPH" in
     *"amazon0601"*) V=403394 ;;
     *"gplus_combined"*) V=107614 ;;

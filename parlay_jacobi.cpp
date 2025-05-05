@@ -82,6 +82,6 @@ int main(int argc, char **argv) {
   double secs = get_elapsed_time(t0, t1);
   std::cout << "Total PageRank time: " << secs << " seconds\n";
 
-  print_top_pages(ranks, G.n);
+  print_top_pages(ranks, G);
   return 0;
 }

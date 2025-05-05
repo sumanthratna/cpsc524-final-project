@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <limits.h>
 
 /***** Struct for timestamps *****/
 struct timeval start, end;
@@ -26,6 +27,7 @@ typedef struct {
   int *From_id;
   int con_size;
   int from_size;
+  int original_id;  // Store original node ID
 } Node;
 
 #define maxThreads 64
@@ -110,36 +112,87 @@ void Nodes_Allocation() {
 }
 
 /***** Read graph connections from txt file *****/
-
 void Read_from_txt_file(char *filename) {
-
   FILE *fid;
-
   int from_idx, to_idx;
   int temp_size;
   char line[1000];
+  int max_id = 0;
+  int min_id = INT_MAX;
 
-  fid = fopen("web-Google.txt", "r");
+  // First pass: find min and max IDs
+  fid = fopen(filename, "r");
   if (fid == NULL) {
     printf("Error opening the file\n");
+    return;
   }
 
-  while (!feof(fid)) {
-    fgets(line, sizeof(line), fid);
-    // ignore sentences starting from #
+  while (fgets(line, sizeof(line), fid) != NULL) {
     if (sscanf(line, "%d\t%d\n", &from_idx, &to_idx)) {
-      Nodes[from_idx].con_size++;
-      Nodes[to_idx].from_size++;
-      temp_size = Nodes[to_idx].from_size;
-      Nodes[to_idx].From_id =
-          (int *)realloc(Nodes[to_idx].From_id, temp_size * sizeof(int));
-      Nodes[to_idx].From_id[temp_size - 1] = from_idx;
+      if (from_idx > max_id) max_id = from_idx;
+      if (to_idx > max_id) max_id = to_idx;
+      if (from_idx < min_id) min_id = from_idx;
+      if (to_idx < min_id) min_id = to_idx;
+    }
+  }
+  fclose(fid);
+
+  // Create ID mapping
+  int id_range = max_id - min_id + 1;
+  int *id_to_idx = (int *)malloc(id_range * sizeof(int));
+  int *idx_to_id = (int *)malloc(N * sizeof(int));
+  int current_idx = 0;
+
+  // Initialize mapping
+  for (int i = 0; i < id_range; i++) {
+    id_to_idx[i] = -1;  // -1 indicates unmapped
+  }
+
+  // Second pass: build mapping and read edges
+  fid = fopen(filename, "r");
+  if (fid == NULL) {
+    printf("Error opening the file\n");
+    return;
+  }
+
+  while (fgets(line, sizeof(line), fid) != NULL) {
+    if (sscanf(line, "%d\t%d\n", &from_idx, &to_idx)) {
+      // Map source node if not mapped
+      if (id_to_idx[from_idx - min_id] == -1) {
+        id_to_idx[from_idx - min_id] = current_idx;
+        idx_to_id[current_idx] = from_idx;
+        current_idx++;
+      }
+      // Map destination node if not mapped
+      if (id_to_idx[to_idx - min_id] == -1) {
+        id_to_idx[to_idx - min_id] = current_idx;
+        idx_to_id[current_idx] = to_idx;
+        current_idx++;
+      }
+
+      // Get mapped indices
+      int mapped_from = id_to_idx[from_idx - min_id];
+      int mapped_to = id_to_idx[to_idx - min_id];
+
+      // Update graph structure
+      Nodes[mapped_from].con_size++;
+      Nodes[mapped_to].from_size++;
+      temp_size = Nodes[mapped_to].from_size;
+      Nodes[mapped_to].From_id = (int *)realloc(Nodes[mapped_to].From_id, temp_size * sizeof(int));
+      Nodes[mapped_to].From_id[temp_size - 1] = mapped_from;
     }
   }
 
   printf("End of connections insertion!\n");
-
   fclose(fid);
+
+  // Store original IDs
+  for (int i = 0; i < N; i++) {
+    Nodes[i].original_id = idx_to_id[i];
+  }
+
+  free(id_to_idx);
+  free(idx_to_id);
 }
 
 /***** Read P vector from txt file*****/
@@ -387,7 +440,7 @@ int main(int argc, char **argv) {
         indices[j] = temp;
       }
     }
-    printf("%d. Page %d (rank: %f)\n", i + 1, indices[i], Nodes[indices[i]].p);
+    printf("%d. Page %d (rank: %f)\n", i + 1, Nodes[indices[i]].original_id, Nodes[indices[i]].p);
   }
 
   free(indices);
