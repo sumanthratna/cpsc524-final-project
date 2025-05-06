@@ -3,7 +3,7 @@ CC = gcc
 # CXX = /opt/homebrew/opt/gcc/bin/g++-14 # for buwei
 CXX = g++
 CFLAGS = -O4
-CXXFLAGS = -std=c++17 -O3 -fopenmp -pthread
+CXXFLAGS = -std=c++17 -O4 -fopenmp -pthread
 CLIBS = -lpthread -lm
 PARLAY_INC = -I parlaylib/include
 
