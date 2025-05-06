@@ -456,6 +456,15 @@ int main(int argc, char **argv) {
       1000;
 
   printf("\nTotaltime = %f seconds\n", totaltime);
+  ////////////////////////////////
+  // Open the file in append mode
+  FILE *output_file = fopen("gauss_seidel_blocking.txt", "a");
+  if (output_file == NULL) {
+    printf("Error opening output file for writing\n");
+    return EXIT_FAILURE;
+  }
+  fprintf(output_file, "%f\n", totaltime);
+  ////////////////////////////////
 
   printf("End of program!\n");
 

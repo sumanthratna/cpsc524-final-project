@@ -337,6 +337,19 @@ int main(int argc, char **argv) {
       1000;
 
   printf("\nTotaltime = %f seconds\n", totaltime);
+  ////////////////////////////////
+  // Open the file in append mode
+  FILE *output_file = fopen("serial_jacobi.txt", "a");
+  if (output_file == NULL) {
+    printf("Error opening output file for writing\n");
+    return EXIT_FAILURE;
+  }
+  // Write the total time to the file
+  fprintf(output_file, "%f\n", totaltime);
+  ////////////////////////////////
+
+  // Close the file
+  fclose(output_file);
 
   // Print top 10 pages by rank
   printf("\nTop 10 pages by rank:\n");

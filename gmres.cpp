@@ -235,6 +235,17 @@ int main(int argc, char **argv) {
               + (t1.tv_usec - t0.tv_usec)*1e-6;
   std::cout << "Total PageRank time: " << secs << " seconds\n";
 
+  ////////////////////////////////
+  // Open the file in append mode
+  std::ofstream output_file("pagerank_mc.txt", std::ios::app);
+  if (!output_file.is_open()) {
+    std::cerr << "Error opening output file for writing\n";
+    return EXIT_FAILURE;
+  }
+  output_file << secs << "\n";
+  output_file.close();
+  ////////////////////////////////
+
   // print top 10
   std::vector<std::pair<double,size_t>> top;
   top.reserve(G.n);

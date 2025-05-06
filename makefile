@@ -10,7 +10,7 @@ CXXFLAGS = -std=c++17 -O3 -fopenmp -pthread
 PARLAY_INC = -I parlaylib/include
 
 # Executables (C and C++)
-C_PROGS = serial_jacobi jacobi_blocking guess_seidel guess_seidel_batched guess_seidel_cache gauss_seidel_blocking
+C_PROGS = serial_jacobi jacobi_blocking guess_seidel guess_seidel_cache gauss_seidel_blocking
 CXX_PROGS = delta_push parlay_jacobi random_walk gmres
 
 # All executables
@@ -46,7 +46,7 @@ benchmark-all:
 	done; exit 0
 
 clean:
-	rm -f $(PROGS) *.o *.out *.exe *.bin
+	rm -f $(PROGS) *.o *.out *.exe *.bin *.txt
 
 # Hack to ignore extra args
 %::

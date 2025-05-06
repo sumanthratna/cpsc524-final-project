@@ -82,6 +82,17 @@ int main(int argc, char **argv) {
   double secs = get_elapsed_time(t0, t1);
   std::cout << "Total PageRank time: " << secs << " seconds\n";
 
+  ////////////////////////////////
+  // Open the file in append mode
+  std::ofstream output_file("pagerank_mc.txt", std::ios::app);
+  if (!output_file.is_open()) {
+    std::cerr << "Error opening output file for writing\n";
+    return EXIT_FAILURE;
+  }
+  output_file << secs << "\n";
+  output_file.close();
+  ////////////////////////////////
+
   print_top_pages(ranks, G);
   return 0;
 }
