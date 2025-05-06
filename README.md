@@ -4,9 +4,6 @@ Sumanth Ratna, Micah Gold, Buwei Chen
 
 ## Implementations
 
-C_PROGS = serial_jacobi jacobi_blocking guess_seidel guess_seidel_cache gauss_seidel_blocking
-CXX_PROGS = delta_push parlay_jacobi random_walk
-
 - [`serial_jacobi`](./serial_jacobi.c)
 - [`jacobi_blocking`](./jacobi_blocking.c)
 - [`guess_seidel`](./guess_seidel.c)

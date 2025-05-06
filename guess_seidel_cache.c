@@ -1,5 +1,3 @@
-// ./pagerank web-Google.txt 916428 0.00001 0.85 8
-
 /********************************************************************/
 /*    Pagerank project 2014 - Parallel version                      */
 /*    	*based on Cleve Moler's matlab implementation               */

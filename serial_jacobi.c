@@ -328,14 +328,6 @@ int main(int argc, char **argv) {
 
   printf("\n");
 
-  // Print final probabilitities
-  /*for (i = 0; i < N; i++)
-  {
-      printf("P_t1[%d] = %f\n",i,Nodes[i].p_t1);
-  }
-
-  printf("\n");*/
-
   // Print no of iterations
   printf("Total iterations: %d\n", iterations);
 

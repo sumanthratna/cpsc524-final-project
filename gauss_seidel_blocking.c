@@ -1,4 +1,3 @@
-/******************** Includes - Defines ****************/
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
@@ -13,14 +12,12 @@
 struct timeval start, end;
 
 /***** Struct used for Threads data *****/
-
 typedef struct {
   int tid;
   int start, end;
 } Thread;
 
 /***** Struct used for Nodes data *****/
-
 typedef struct {
   double p;
   double e;
@@ -32,7 +29,6 @@ typedef struct {
 
 #define maxThreads 64
 
-/******************** Defines ****************/
 // Number of nodes
 int N, num_threads;
 
@@ -450,13 +446,6 @@ int main(int argc, char **argv) {
   }
 
   free(indices);
-
-  /*for (i = 0; i < N; i++)
-  {
-      printf("P_t1[%d] = %f\n",i, Nodes[i].p_t1);
-  }
-
-  printf("\n");*/
 
   // Print no of iterations
   printf("Total iterations: %d\n", iterations);
