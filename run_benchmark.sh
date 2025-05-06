@@ -21,6 +21,7 @@ case "$GRAPH" in
     *"web-NotreDame"*) V=325729 ;;
     *"web-Stanford"*) V=281904 ;;
     *"wiki-Talk"*) V=2394385 ;;
+    *"soc-Epinions1"*) V=76000 ;;
     *) echo "Unknown graph: $GRAPH"; exit 1 ;;
 esac
 

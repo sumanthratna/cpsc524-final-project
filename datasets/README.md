@@ -17,6 +17,7 @@ NOTE: gplus_combined.txt.gz and soc-pokec-relationships.txt.gz are too large for
 | [web-NotreDame](https://snap.stanford.edu/data/web-NotreDame.html) | 325,729 | 1,497,134 | 0.0000141 |
 | [web-Stanford](https://snap.stanford.edu/data/web-Stanford.html) | 281,903 | 2,312,497 | 0.0000291 |
 | [wiki-Talk](https://snap.stanford.edu/data/wiki-Talk.html) | 2,394,385 | 5,021,410 | 0.000000877 |
+| [soc-Epinions1](https://snap.stanford.edu/data/soc-Epinions1.html) | 75,879 | 508,837 | 0.0000884 |
 
 Find more datasets at: https://snap.stanford.edu/data/index.html#web
 
