@@ -11,7 +11,7 @@ PARLAY_INC = -I parlaylib/include
 
 # Executables (C and C++)
 C_PROGS = serial_jacobi jacobi_blocking guess_seidel guess_seidel_cache gauss_seidel_blocking
-CXX_PROGS = delta_push parlay_jacobi random_walk gmres
+CXX_PROGS = delta_push parlay_jacobi random_walk
 
 # All executables
 PROGS = $(C_PROGS) $(CXX_PROGS)

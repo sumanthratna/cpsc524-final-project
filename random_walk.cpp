@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
   std::cout << "Total PageRank time: " << secs << " seconds\n";
   ////////////////////////////////
   // Open the file in append mode
-  std::ofstream output_file("pagerank_mc.txt", std::ios::app);
+  std::ofstream output_file("random_walk.txt", std::ios::app);
   if (!output_file.is_open()) {
     std::cerr << "Error opening output file for writing\n";
     return EXIT_FAILURE;

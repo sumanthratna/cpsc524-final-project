@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 
   ////////////////////////////////
   // Open the file in append mode
-  std::ofstream output_file("pagerank_mc.txt", std::ios::app);
+  std::ofstream output_file("parlay_jacobi.txt", std::ios::app);
   if (!output_file.is_open()) {
     std::cerr << "Error opening output file for writing\n";
     return EXIT_FAILURE;
