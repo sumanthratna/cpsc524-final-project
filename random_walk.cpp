@@ -1,17 +1,3 @@
-// monte_carlo_pagerank.cpp
-// Monte Carlo (random‐walk) PageRank in ParlayLib + OpenMP,
-// adapted to your input/output style and timing conventions.
-//
-// Compile with:
-//   g++ -std=c++17 -O3 -fopenmp \
-//       -I parlaylib/include \
-//       monte_carlo_pagerank.cpp -o pagerank_mc \
-//       -pthread
-//
-// Run with:
-//   ./pagerank_mc <edge_list.txt> [num_vertices]
-//                  [num_walkers] [walk_length]
-//                  [damping]     [num_threads]
 
 #include <cmath>
 #include <fstream>

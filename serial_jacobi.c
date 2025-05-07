@@ -1,5 +1,4 @@
-// g++ -O3 pagerank_serial.cpp -o pagerank
-// ./pagerank graph.txt 916428 0.000001 0.85
+
 
 /********************************************************************/
 /*    Pagerank project 2014 - Serial version                        */

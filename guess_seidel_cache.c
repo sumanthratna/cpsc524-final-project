@@ -1,9 +1,4 @@
-/********************************************************************/
-/*    Pagerank project 2014 - Parallel version                      */
-/*    	*based on Cleve Moler's matlab implementation               */
-/*                                                                  */
-/*    Implemented by Nikos Katirtzis (nikos912000)                  */
-/********************************************************************/
+
 
 /******************** Includes - Defines ****************/
 #include <assert.h>
