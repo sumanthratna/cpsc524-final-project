@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 <prog> <graph> <threshold>"
+    echo "Usage: $0 <graph> <threshold>"
     exit 1
 fi
 
