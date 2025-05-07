@@ -4,12 +4,11 @@
 
 Datasets are large so they are on gitignore list. Decompress the .gz files before use.
 
-NOTE: gplus_combined.txt.gz and soc-pokec-relationships.txt.gz are too large for GitHub, even compressed. Follow the links below to download.
+NOTE: soc-pokec-relationships.txt.gz is too large for GitHub, even compressed. Follow the link below to download.
 
 | Dataset | Vertices (V) | Edges (E) | Density (E/V²) |
 |---------|-------------|-----------|----------------|
 | [amazon0601](https://snap.stanford.edu/data/amazon0601.html) | 403,394 | 3,387,388 | 0.00002082 |
-| [gplus_combined](https://snap.stanford.edu/data/ego-Gplus.html) | 107,614 | 13,673,453 | 0.0011807 |
 | [soc-pokec-relationships](https://snap.stanford.edu/data/soc-Pokec.html) | 1,632,803 | 30,622,564 | 0.0000115 |
 | [twitter_combined](https://snap.stanford.edu/data/ego-Twitter.html) | 81,306 | 1,768,149 | 0.000267 |
 | [web-BerkStan](https://snap.stanford.edu/data/web-BerkStan.html) | 685,230 | 7,600,595 | 0.0000162 |
@@ -23,7 +22,7 @@ Find more datasets at: https://snap.stanford.edu/data/index.html#web
 
 ## Downloading
 
-To download gplus_combined.txt.gz and soc-pokec-relationships.txt.gz: `wget https://snap.stanford.edu/data/gplus_combined.txt.gz https://snap.stanford.edu/data/soc-pokec-relationships.txt.gz`
+To download soc-pokec-relationships.txt.gz: `wget https://snap.stanford.edu/data/soc-pokec-relationships.txt.gz`
 
 ## Decompressing
 
