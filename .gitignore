@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 delta_push
 gauss_seidel_blocking
 guess_seidel
@@ -7,9 +6,6 @@ jacobi_blocking
 parlay_jacobi
 random_walk
 serial_jacobi
-=======
-
->>>>>>> buwei-branch
 
 # Prerequisites
 *.d
@@ -69,6 +65,3 @@ dkms.conf
 # Fortran module files
 *.mod
 *.smod
-
-# Data
-data
